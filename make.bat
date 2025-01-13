@@ -1,5 +1,5 @@
 @echo off
 SETLOCAL
-SET BEEBASM=C:\Users\user\bin\beebasm.exe
-SET PYTHON=C:\Users\user\AppData\Local\Microsoft\WindowsApps\python.exe
+SET BEEBASM=beebasm
+SET PYTHON=python3
 2-build-files\make %*

@@ -66,16 +66,22 @@
 
  EQUB 0                 ; Byte #5 = 0 = board uses CHR RAM
 
- EQUB %00010010         ; Byte #6 = mapper and WRAM configuration
+ EQUB $12               ; Byte #6 = mapper and WRAM configuration
                         ;
                         ;   * Bit 1 set = Cartridge contains battery-backed RAM
                         ;                 at $6000 to $7FFF
                         ;
                         ;   * Bits 4-7 = mapper number, %0001 = MMC1
 
- EQUB 0                 ; Bytes #7 to #15 are zero and have no effect
- EQUD 0
- EQUD 0
+ EQUB %1000             ; Byte #7: NES2.0 Header
+ EQUB 0                 ; Byte #8
+ EQUB 0                 ; Byte #9
+ EQUB $70               ; Byte #10: save RAM size (64<<7=8K)
+ EQUB $07               ; Byte #11: CHR-RAM size (64<<7=8K)
+ EQUB $01               ; Byte #12: PAL NES timing
+ EQUB 0                 ; Byte #13
+ EQUB 0                 ; Byte #14
+ EQUB $01               ; Byte #15: uses standard NES controllers
 
 ; ******************************************************************************
 ;
