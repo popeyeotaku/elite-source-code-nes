@@ -16606,7 +16606,7 @@ ENDIF
 
 .paws1
 
- JSR SetupPPUForIconBar ; If the PPU has started drawing the icon bar, configure
+; JSR SetupPPUForIconBar ; If the PPU has started drawing the icon bar, configure
                         ; the PPU to use nametable 0 and pattern table 0
 
  LDA controller1A       ; Keep looping back to paws1 until either the A button
@@ -17652,7 +17652,7 @@ ENDIF
                         ; pointer and is therefore equal to the number of
                         ; characters minus 1)
 
- JSR SetupPPUForIconBar ; If the PPU has started drawing the icon bar, configure
+; JSR SetupPPUForIconBar ; If the PPU has started drawing the icon bar, configure
                         ; the PPU to use nametable 0 and pattern table 0
 
 .DAL4

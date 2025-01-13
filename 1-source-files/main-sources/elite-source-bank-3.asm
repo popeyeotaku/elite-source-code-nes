@@ -5433,7 +5433,7 @@ ENDIF
 
 .fram1
 
- JSR SetupPPUForIconBar ; If the PPU has started drawing the icon bar, configure
+; JSR SetupPPUForIconBar ; If the PPU has started drawing the icon bar, configure
                         ; the PPU to use nametable 0 and pattern table 0
 
  LDA #1                 ; Set the tile at the start of the row (at offset 0) to
@@ -5643,7 +5643,7 @@ ENDIF
 
 .sbox1
 
- JSR SetupPPUForIconBar ; If the PPU has started drawing the icon bar, configure
+; JSR SetupPPUForIconBar ; If the PPU has started drawing the icon bar, configure
                         ; the PPU to use nametable 0 and pattern table 0
 
  LDA SC                 ; Add 32 to SC(1 0) to move down to the next row in

@@ -71,7 +71,7 @@
                         ;   * Bit 1 set = Cartridge contains battery-backed RAM
                         ;                 at $6000 to $7FFF
                         ;
-                        ;   * Bits 4-7 = mapper number, %0001 = MMC1
+                        ;   * Bits 4-7 = mapper number, %0001 = MMC3
 
  EQUB %1000             ; Byte #7: NES2.0 Header
  EQUB 0                 ; Byte #8

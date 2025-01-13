@@ -11244,7 +11244,7 @@ ENDIF
 
 .MoveInLeftColumn
 
- JSR SetupPPUForIconBar ; If the PPU has started drawing the icon bar, configure
+; JSR SetupPPUForIconBar ; If the PPU has started drawing the icon bar, configure
                         ; the PPU to use nametable 0 and pattern table 0
 
  LDX controller1Left03  ; If the left button on controller 1 was not being held
@@ -11495,7 +11495,7 @@ ENDIF
 
 .ndir1
 
- JSR SetupPPUForIconBar ; If the PPU has started drawing the icon bar, configure
+; JSR SetupPPUForIconBar ; If the PPU has started drawing the icon bar, configure
                         ; the PPU to use nametable 0 and pattern table 0
 
  LDA controller1Left03  ; Keep looping back to ndir1 until both the left and
@@ -11568,7 +11568,7 @@ ENDIF
 
 .mrig1
 
- JSR SetupPPUForIconBar ; If the PPU has started drawing the icon bar, configure
+; JSR SetupPPUForIconBar ; If the PPU has started drawing the icon bar, configure
                         ; the PPU to use nametable 0 and pattern table 0
 
  LDX controller1Up      ; If the up button on controller 1 is not being pressed,
@@ -11706,7 +11706,7 @@ ENDIF
 
 .mmid1
 
- JSR SetupPPUForIconBar ; If the PPU has started drawing the icon bar, configure
+; JSR SetupPPUForIconBar ; If the PPU has started drawing the icon bar, configure
                         ; the PPU to use nametable 0 and pattern table 0
 
  LDX controller1Up      ; If the up button on controller 1 is not being pressed,
@@ -12448,7 +12448,7 @@ ENDIF
  PHA                    ; Store the value of A on the stack so we can restore it
                         ; at the end of the subroutine
 
- JSR SetupPPUForIconBar ; If the PPU has started drawing the icon bar, configure
+; JSR SetupPPUForIconBar ; If the PPU has started drawing the icon bar, configure
                         ; the PPU to use nametable 0 and pattern table 0
 
  CMP #9                 ; If A = 9 then this is the current commander in the
@@ -15292,7 +15292,7 @@ ENDIF
 
 .ClearDashEdge
 
- JSR SetupPPUForIconBar ; If the PPU has started drawing the icon bar, configure
+; JSR SetupPPUForIconBar ; If the PPU has started drawing the icon bar, configure
                         ; the PPU to use nametable 0 and pattern table 0
 
  LDA #0                 ; Clear the right edge of the box on rows 20 to 27 in

@@ -2542,8 +2542,8 @@ ENDIF
 
 .MA64
 
- JSR SetupPPUForIconBar ; If the PPU has started drawing the icon bar, configure
-                        ; the PPU to use nametable 0 and pattern table 0
+;  JSR SetupPPUForIconBar ; If the PPU has started drawing the icon bar, configure
+;                         ; the PPU to use nametable 0 and pattern table 0
 
 .MA68
 
@@ -2696,7 +2696,7 @@ ENDIF
                         ; bitplane to the PPU and update the dashboard in the
                         ; space view
 
- JSR SetupPPUForIconBar ; If the PPU has started drawing the icon bar, configure
+;  JSR SetupPPUForIconBar ; If the PPU has started drawing the icon bar, configure
                         ; the PPU to use nametable 0 and pattern table 0
                         ;
                         ; If bit 7 of setupPPUForIconBar is set, then this also
@@ -3646,7 +3646,7 @@ ENDIF
  LDA #37                ; Tell the NMI handler to send pattern entries from
  STA firstPattern       ; pattern 37 in the buffer
 
- JSR SetupPPUForIconBar ; If the PPU has started drawing the icon bar, configure
+;  JSR SetupPPUForIconBar ; If the PPU has started drawing the icon bar, configure
                         ; the PPU to use nametable 0 and pattern table 0
 
  JSR DrawBoxEdges       ; Draw the left and right edges of the box along the
@@ -7091,7 +7091,11 @@ ENDIF
  LDY #10                ; the middle of the screen and leave it there for 10
  JSR PrintMessage       ; ticks of the DLY counter
 
- LDA #25                ; Set nmiTimer = 25 to add half a second on top of the
+IF _NTSC
+ LDA #30                ; Set nmiTimer = 25 to add half a second on top of the
+ELIF _PAL
+ LDA #25
+ENDIF
  STA nmiTimer           ; penalty below (as 25 frames is half a second in PAL
                         ; systems)
 
@@ -7426,7 +7430,7 @@ ENDIF
  PHP                    ; Store the flags on the stack to we can retrieve them
                         ; after the macro
 
- JSR SetupPPUForIconBar ; If the PPU has started drawing the icon bar, configure
+;  JSR SetupPPUForIconBar ; If the PPU has started drawing the icon bar, configure
                         ; the PPU to use nametable 0 and pattern table 0
 
  PLP                    ; Retrieve the flags from the stack
@@ -12003,7 +12007,7 @@ ENDIF
  ASL A                  ; an index into the market prices table at QQ23 for this
  STA QQ19               ; item (as there are four bytes per item in the table)
 
- JSR SetupPPUForIconBar ; If the PPU has started drawing the icon bar, configure
+;  JSR SetupPPUForIconBar ; If the PPU has started drawing the icon bar, configure
                         ; the PPU to use nametable 0 and pattern table 0
 
  LDA MJ                 ; If we are in witchspace, we can't trade items, so jump
@@ -12381,7 +12385,7 @@ ENDIF
 
 .TT168
 
- JSR SetupPPUForIconBar ; If the PPU has started drawing the icon bar, configure
+;  JSR SetupPPUForIconBar ; If the PPU has started drawing the icon bar, configure
                         ; the PPU to use nametable 0 and pattern table 0
 
  JSR TT151              ; Call TT151 to print the item name, market price and
@@ -12455,7 +12459,7 @@ ENDIF
 
 .sell4
 
- JSR SetupPPUForIconBar ; If the PPU has started drawing the icon bar, configure
+;  JSR SetupPPUForIconBar ; If the PPU has started drawing the icon bar, configure
                         ; the PPU to use nametable 0 and pattern table 0
 
  LDA controller1B       ; If the B button is being pressed, jump to sell6
@@ -13766,7 +13770,7 @@ ENDIF
 
  LDX XX13               ; Set X to the item number to print
 
- JSR SetupPPUForIconBar ; If the PPU has started drawing the icon bar, configure
+;  JSR SetupPPUForIconBar ; If the PPU has started drawing the icon bar, configure
                         ; the PPU to use nametable 0 and pattern table 0
 
  STX XX13               ; Store the item number in XX13, in case we entered the
@@ -14881,7 +14885,7 @@ ENDIF
 
 .qv
 
- JSR SetupPPUForIconBar ; If the PPU has started drawing the icon bar, configure
+;  JSR SetupPPUForIconBar ; If the PPU has started drawing the icon bar, configure
                         ; the PPU to use nametable 0 and pattern table 0
 
  LDA controller1Left03  ; If A button is being pressed, or the left or right
@@ -14952,7 +14956,7 @@ ENDIF
 
 .vpop2
 
- JSR SetupPPUForIconBar ; If the PPU has started drawing the icon bar, configure
+;  JSR SetupPPUForIconBar ; If the PPU has started drawing the icon bar, configure
                         ; the PPU to use nametable 0 and pattern table 0
 
  LDA controller1Up      ; If the up button is not being pressed, jump to vpop4
@@ -16999,7 +17003,7 @@ ENDIF
 
 .RemoveShip
 
- JSR SetupPPUForIconBar ; If the PPU has started drawing the icon bar, configure
+;  JSR SetupPPUForIconBar ; If the PPU has started drawing the icon bar, configure
                         ; the PPU to use nametable 0 and pattern table 0
 
  LDY #NI%-1             ; There are NI% bytes in each ship data block (and in
@@ -19818,7 +19822,7 @@ ENDIF
 
 .BR1
 
- JSR SetupPPUForIconBar ; If the PPU has started drawing the icon bar, configure
+;  JSR SetupPPUForIconBar ; If the PPU has started drawing the icon bar, configure
                         ; the PPU to use nametable 0 and pattern table 0
 
  JSR ResetCommander_b6  ; Reset the current commander to the default "JAMESON"
@@ -19963,7 +19967,7 @@ ENDIF
 
  JSR U%                 ; Call U% to clear the key logger
 
- JSR SetupPPUForIconBar ; If the PPU has started drawing the icon bar, configure
+; JSR SetupPPUForIconBar ; If the PPU has started drawing the icon bar, configure
                         ; the PPU to use nametable 0 and pattern table 0
 
  LDA #96                ; Set nosev_z hi = 96 (96 is the value of unity in the
@@ -20171,7 +20175,7 @@ ENDIF
 
 .ZERO
 
- JSR SetupPPUForIconBar ; If the PPU has started drawing the icon bar, configure
+; JSR SetupPPUForIconBar ; If the PPU has started drawing the icon bar, configure
                         ; the PPU to use nametable 0 and pattern table 0
 
  LDX #(de-FRIN+1)       ; We're going to zero the WP workspace variables from
@@ -20202,7 +20206,7 @@ ENDIF
  BPL ZEL2               ; Loop back to zero the next variable until we have done
                         ; them all from MANY to MANY+33
 
- JSR SetupPPUForIconBar ; If the PPU has started drawing the icon bar, configure
+; JSR SetupPPUForIconBar ; If the PPU has started drawing the icon bar, configure
                         ; the PPU to use nametable 0 and pattern table 0
 
  RTS                    ; Return from the subroutine

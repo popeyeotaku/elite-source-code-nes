@@ -42,69 +42,6 @@
  LOAD_BANK_7% = $C000   ; The address where the code will be loaded
 
  ORG CODE_BANK_7%
-
-; ******************************************************************************
-;
-;       Name: ResetMMC1_b7
-;       Type: Variable
-;   Category: Start and end
-;    Summary: The MMC1 mapper reset routine at the start of the ROM bank
-;  Deep dive: Splitting NES Elite across multiple ROM banks
-;
-; ------------------------------------------------------------------------------
-;
-; When the NES is switched on, it is hardwired to perform a JMP ($FFFC). At this
-; point, there is no guarantee as to which ROM banks are mapped to $8000 and
-; $C000, so to ensure that the game starts up correctly, we put the same code
-; in each ROM at the following locations:
-;
-;   * We put $C000 in address $FFFC in every ROM bank, so the NES always jumps
-;     to $C000 when it starts up via the JMP ($FFFC), irrespective of which
-;     ROM bank is mapped to $C000.
-;
-;   * We put the same reset routine (this routine, ResetMMC1) at the start of
-;     every ROM bank, so the same routine gets run, whichever ROM bank is mapped
-;     to $C000.
-;
-; This ResetMMC1 routine is therefore called when the NES starts up, whatever
-; bank configuration ends up being. It then switches ROM bank 7 to $C000 and
-; jumps into bank 7 at the game's entry point BEGIN, which starts the game.
-;
-; We need to give a different label to this version of the reset routine so we
-; can assemble bank 7 at the same time as banks 0 to 6, to enable the lower
-; banks to see the exported addresses for bank 7.
-;
-; ******************************************************************************
-
-.ResetMMC1_b7
-
- SEI                    ; Disable interrupts
-
- INC $C006              ; Reset the MMC1 mapper, which we can do by writing a
-                        ; value with bit 7 set into any address in ROM space
-                        ; (i.e. any address from $8000 to $FFFF)
-                        ;
-                        ; The INC instruction does this in a more efficient
-                        ; manner than an LDA/STA pair, as it:
-                        ;
-                        ;   * Fetches the contents of address $C006, which
-                        ;     contains the high byte of the JMP destination
-                        ;     below, i.e. the high byte of BEGIN, which is $C0
-                        ;
-                        ;   * Adds 1, to give $C1
-                        ;
-                        ;   * Writes the value $C1 back to address $C006
-                        ;
-                        ; $C006 is in the ROM space and $C1 has bit 7 set, so
-                        ; the INC does all that is required to reset the mapper,
-                        ; in fewer cycles and bytes than an LDA/STA pair
-                        ;
-                        ; Resetting MMC1 maps bank 7 to $C000 and enables the
-                        ; bank at $8000 to be switched, so this instruction
-                        ; ensures that bank 7 is present
-
- JMP BEGIN              ; Jump to BEGIN in bank 7 to start the game
-
 ; ******************************************************************************
 ;
 ;       Name: BEGIN
@@ -351,7 +288,7 @@
  BNE resv5              ; Loop back until we have zeroed three pages of memory
                         ; from $0300 to $05FF
 
- JSR SetupMMC1          ; Configure the MMC1 mapper and page ROM bank 0 into
+ JSR SetupMMC3          ; Configure the MMC1 mapper and page ROM bank 0 into
                         ; memory at $8000
 
  JSR ResetMusic         ; Reset the current tune to 0 and stop the music
@@ -2978,7 +2915,7 @@ ENDIF
  LDA nameBuffer0+768,Y  ; Copy byte 768, and bytes 1023 to 769 into nametable
  STA nameBuffer1+768,Y  ; buffer 1 as Y counts down
 
- JSR SetupPPUForIconBar ; If the PPU has started drawing the icon bar, configure
+; JSR SetupPPUForIconBar ; If the PPU has started drawing the icon bar, configure
                         ; the PPU to use nametable 0 and pattern table 0
 
  DEX                    ; Decrement the counter in X, wrapping it back up to 16
@@ -3342,8 +3279,8 @@ ENDIF
 ;
 ; ******************************************************************************
 
-.nameBufferHiAddr
 
+.nameBufferHiAddr
  EQUB HI(nameBuffer0)
  EQUB HI(nameBuffer1)
 
@@ -3366,12 +3303,22 @@ ENDIF
 ;       Name: IRQ
 ;       Type: Subroutine
 ;   Category: Utility routines
-;    Summary: Handle IRQ interrupts by doing nothing
+;    Summary: Switch PPU name and pattern tables to 0 during scanline IRQ.
 ;
 ; ******************************************************************************
 
 .IRQ
-
+ STA $E000              ; Acknowledge and disable scanline IRQ.
+ PHA
+ LDA ppuCtrlCopy        ; Set A to the current value of PPU_CTRL
+ AND #%11101110         ; Clear bits 0 and 4, which will set the base nametable
+                        ; address to $2000 (for nametable 0) and the pattern
+                        ; table address to $0000 (for pattern table 0)
+ STA PPU_CTRL           ; Update PPU_CTRL to set nametable 0 and pattern table 0
+ STA ppuCtrlCopy        ; Store the new value of PPU_CTRL in ppuCtrlCopy so we
+                        ; can check its value without having to access the PPU
+ PLA
+.IRQSKIP
  RTI                    ; Return from the interrupt handler
 
 ; ******************************************************************************
@@ -3391,19 +3338,25 @@ ENDIF
 
  JSR SendPaletteSprites ; Send the current palette and sprite data to the PPU
 
- LDA showUserInterface  ; Set the value of setupPPUForIconBar so that if there
- STA setupPPUForIconBar ; is an on-screen user interface (which there will be if
-                        ; this isn't the game over screen), then the calls to
-                        ; the SETUP_PPU_FOR_ICON_BAR macro sprinkled throughout
-                        ; the codebase will make sure we set nametable 0 and
-                        ; palette table 0 when the PPU starts drawing the icon
-                        ; bar
+;  LDA showUserInterface  ; Set the value of setupPPUForIconBar so that if there
+;  STA setupPPUForIconBar ; is an on-screen user interface (which there will be if
+;                         ; this isn't the game over screen), then the calls to
+;                         ; the SETUP_PPU_FOR_ICON_BAR macro sprinkled throughout
+;                         ; the codebase will make sure we set nametable 0 and
+;                         ; palette table 0 when the PPU starts drawing the icon
+;                         ; bar
+ LDA showUserInterface
+ BEQ NMI_SKIPUI
+ LDA #157+YPAL            ; Line to swap banks on.
+ STA $C000                ; write to scanline IRQ register.
+ STA $E001                ; enable the IRQ.
 
+.NMI_SKIPUI
 IF _NTSC
 
- LDA #HI(6797)          ; Set cycleCount = 6797
+ LDA #HI(2252)          ; Set cycleCount = 2252
  STA cycleCount+1       ;
- LDA #LO(6797)          ; We use this to keep track of how many cycles we have
+ LDA #LO(2252)          ; We use this to keep track of how many cycles we have
  STA cycleCount         ; left in the current VBlank, so we only send data to
                         ; the PPU when VBlank is in progress, splitting up the
                         ; larger PPU operations across multiple VBlanks
@@ -3487,7 +3440,11 @@ ENDIF
  BNE nmit1              ; If it hasn't reached zero yet, jump to nmit1 to return
                         ; from the subroutine
 
+IF _NTSC
+ LDA #60                ; Wrap the NMI timer round to start counting down from
+ELIF _PAL
  LDA #50                ; Wrap the NMI timer round to start counting down from
+ENDIF
  STA nmiTimer           ; 50 once again, as it just reached zero
 
  LDA nmiTimerLo         ; Increment (nmiTimerHi nmiTimerLo)
@@ -12984,18 +12941,18 @@ ENDIF
 ;
 ; ******************************************************************************
 
-.SetupPPUForIconBar
+; .SetupPPUForIconBar
 
- PHA                    ; Store the value of A on the stack so we can retrieve
-                        ; it below
+;  PHA                    ; Store the value of A on the stack so we can retrieve
+;                         ; it below
 
- SETUP_PPU_FOR_ICON_BAR ; If the PPU has started drawing the icon bar, configure
-                        ; the PPU to use nametable 0 and pattern table 0
+;  SETUP_PPU_FOR_ICON_BAR ; If the PPU has started drawing the icon bar, configure
+;                         ; the PPU to use nametable 0 and pattern table 0
 
- PLA                    ; Retrieve the value of A from the stack so it is
-                        ; unchanged
+;  PLA                    ; Retrieve the value of A from the stack so it is
+;                         ; unchanged
 
- RTS                    ; Return from the subroutine
+;  RTS                    ; Return from the subroutine
 
 ; ******************************************************************************
 ;
@@ -15811,7 +15768,7 @@ ENDIF
 
 .CLYL
 
- JSR SetupPPUForIconBar ; If the PPU has started drawing the icon bar, configure
+; JSR SetupPPUForIconBar ; If the PPU has started drawing the icon bar, configure
                         ; the PPU to use nametable 0 and pattern table 0
 
  LDY #2                 ; We are going to clear tiles from column 2 to 30 on
@@ -16397,7 +16354,7 @@ ENDIF
 
 .NLIN2
 
- JSR SetupPPUForIconBar ; If the PPU has started drawing the icon bar, configure
+; JSR SetupPPUForIconBar ; If the PPU has started drawing the icon bar, configure
                         ; the PPU to use nametable 0 and pattern table 0
 
  LDY #1                 ; We now draw a horizontal line into the nametable
@@ -19802,7 +19759,7 @@ ENDIF
 
 ; ******************************************************************************
 ;
-;       Name: SetupMMC1
+;       Name: SetupMMC3
 ;       Type: Subroutine
 ;   Category: Utility routines
 ;    Summary: Configure the MMC1 mapper and page ROM bank 0 into memory at $8000
@@ -19810,20 +19767,24 @@ ENDIF
 ;
 ; ******************************************************************************
 
-.SetupMMC1
+.SetupMMC3
+ LDA #0                 ; vertical mirroring
+ STA $A000
+ LDA #0                 ; ensure we have the top 16K banked correctly
+ STA $8000
+;  LDA #%00001110         ; Set the MMC1 Control register (which is mapped to
+;  STA $9FFF              ; $8000-$9FFF) as follows:
+;  LSR A                  ;
+;  STA $9FFF              ;   * Bit 0 clear, Bit 1 set = Vertical mirroring (which
+;  LSR A                  ;     overrides the horizontal mirroring set in the iNES
+;  STA $9FFF              ;     header)
+;  LSR A                  ;
+;  STA $9FFF              ;   * Bits 2,3 set = PRG-ROM bank mode 3 = fix ROM bank
+;  LSR A                  ;     7 at $C000 and switch 16K ROM banks at $8000
+;  STA $9FFF              ;
+;                         ;   * Bit 4 clear = CHR-ROM bank mode 0 = switch 8K at
+;                         ;     a time
 
- LDA #%00001110         ; Set the MMC1 Control register (which is mapped to
- STA $9FFF              ; $8000-$9FFF) as follows:
- LSR A                  ;
- STA $9FFF              ;   * Bit 0 clear, Bit 1 set = Vertical mirroring (which
- LSR A                  ;     overrides the horizontal mirroring set in the iNES
- STA $9FFF              ;     header)
- LSR A                  ;
- STA $9FFF              ;   * Bits 2,3 set = PRG-ROM bank mode 3 = fix ROM bank
- LSR A                  ;     7 at $C000 and switch 16K ROM banks at $8000
- STA $9FFF              ;
-                        ;   * Bit 4 clear = CHR-ROM bank mode 0 = switch 8K at
-                        ;     a time
 
  LDA #0                 ; Set the MMC1 CHR bank 0 register (which is mapped to
  STA $BFFF              ; $A000-$BFFF) to map the first 4K of CHR-RAM to $0000
@@ -19849,6 +19810,51 @@ ENDIF
 
  JMP SetBank0           ; Page ROM bank 0 into memory at $8000, returning from
                         ; the subroutine using a tail call
+
+
+; ******************************************************************************
+;
+;       Name: ResetMMC1_b7
+;       Type: Variable
+;   Category: Start and end
+;    Summary: The MMC1 mapper reset routine at the start of the ROM bank
+;  Deep dive: Splitting NES Elite across multiple ROM banks
+;
+; ------------------------------------------------------------------------------
+;
+; When the NES is switched on, it is hardwired to perform a JMP ($FFFC). At this
+; point, there is no guarantee as to which ROM banks are mapped to $8000 and
+; $C000, so to ensure that the game starts up correctly, we put the same code
+; in each ROM at the following locations:
+;
+;   * We put $C000 in address $FFFC in every ROM bank, so the NES always jumps
+;     to $C000 when it starts up via the JMP ($FFFC), irrespective of which
+;     ROM bank is mapped to $C000.
+;
+;   * We put the same reset routine (this routine, ResetMMC1) at the start of
+;     every ROM bank, so the same routine gets run, whichever ROM bank is mapped
+;     to $C000.
+;
+; This ResetMMC1 routine is therefore called when the NES starts up, whatever
+; bank configuration ends up being. It then switches ROM bank 7 to $C000 and
+; jumps into bank 7 at the game's entry point BEGIN, which starts the game.
+;
+; We need to give a different label to this version of the reset routine so we
+; can assemble bank 7 at the same time as banks 0 to 6, to enable the lower
+; banks to see the exported addresses for bank 7.
+;
+; ******************************************************************************
+
+.ResetMMC1_b7
+
+ SEI                    ; Disable interrupts
+ 
+ LDA #0                 ; ensure MMC3 has $C000-$FFFF mapped to last bank.
+ STA $8000
+
+ JMP BEGIN              ; Jump to BEGIN in bank 7 to start the game
+
+
 
 IF _NTSC
 
